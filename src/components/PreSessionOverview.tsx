@@ -160,7 +160,7 @@ export function PreSessionOverview({
                 >
                    <div className="flex justify-between items-center w-full">
                      <span className={`font-black italic uppercase tracking-tight text-lg ${selectedRoutineType === 'A' ? 'text-primary' : 'text-foreground'}`}>A Routine</span>
-                     {lastSession?.routineId === routineA?.id && (
+                     {lastSession && lastSession.routineId === routineA?.id && (
                        <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-widest border-primary/50 text-primary">Last: {lastSession.date}</Badge>
                      )}
                    </div>
@@ -179,7 +179,7 @@ export function PreSessionOverview({
                   >
                      <div className="flex justify-between items-center w-full">
                        <span className={`font-black italic uppercase tracking-tight text-lg ${selectedRoutineType === 'B' ? 'text-primary' : 'text-foreground'}`}>B Routine</span>
-                       {lastSession?.routineId === routineB?.id && (
+                       {lastSession && lastSession.routineId === routineB?.id && (
                          <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-widest border-primary/50 text-primary">Last: {lastSession.date}</Badge>
                        )}
                      </div>

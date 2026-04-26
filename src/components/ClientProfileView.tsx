@@ -104,6 +104,7 @@ export function ClientProfileView({
   const [historicalRoutineName, setHistoricalRoutineName] = useState('A');
   const [isSavingHistory, setIsSavingHistory] = useState(false);
   const [editingLogs, setEditingLogs] = useState<ExerciseLog[]>([]);
+  const [selectedInsightMachine, setSelectedInsightMachine] = useState<Machine | null>(null);
   const SESSIONS_PER_PAGE = 3;
 
   useEffect(() => {
@@ -413,7 +414,7 @@ export function ClientProfileView({
       where('clientId', '==', clientId),
       where('startTime', '>=', Timestamp.now()),
       orderBy('startTime', 'asc'),
-      limit(1)
+      limit(2)
     );
     const unsubscribe = onSnapshot(q, (snap) => {
       setScheduledSessions(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ScheduleEntry)));
@@ -572,47 +573,68 @@ export function ClientProfileView({
       })()}
 
       {/* Compact Header */}
-      <div className="bg-gradient-to-br from-[#115E8D] to-slate-900 rounded-[16px] px-4 py-3 mb-2 shadow-md relative overflow-hidden text-white flex items-center justify-between">
-        <div className="flex items-center gap-4 z-10 shrink-0">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0 border border-white/20">
+      <div className="bg-gradient-to-br from-[#115E8D] to-slate-900 rounded-[16px] px-3 sm:px-4 py-3 mb-2 shadow-md relative overflow-hidden text-white flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 z-10 shrink-[2] min-w-0">
+          <Button onClick={() => setView('clients')} variant="ghost" size="icon" className="shrink-0 text-white/70 hover:text-white hover:bg-white/10 -ml-1 sm:-ml-2 h-8 w-8 sm:h-10 sm:w-10 rounded-full">
+            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+          </Button>
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0 border border-white/20 hidden sm:flex">
             <User className="w-5 h-5 text-white/50" />
           </div>
-          <div className="flex flex-col">
-             <div className="flex items-baseline gap-3">
-               <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tighter leading-none m-0">
+          <div className="flex flex-col min-w-0">
+             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+               <h2 className="text-lg sm:text-2xl font-black uppercase tracking-tighter leading-none m-0 truncate">
                  {client.firstName} {client.lastName}
                </h2>
-               <div className="flex items-center gap-2 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-white/80">
-                 <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded border border-white/5">
-                   <Clock className="w-3 h-3" />
+               <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-white/80">
+                 <div className="flex items-center gap-1 bg-white/10 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-white/5 whitespace-nowrap">
+                   <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                    <span>LAST: <span className="text-white">{sessions[0]?.date ? new Date(sessions[0].date + 'T12:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'NONE'}</span></span>
                  </div>
-                 {scheduledSessions[0] ? (
-                   <div className="flex items-center gap-1 bg-[#F06C22]/20 text-[#F06C22] px-2 py-1 rounded border border-[#F06C22]/30 shadow-[0_0_10px_rgba(240,108,34,0.3)]">
-                     <Clock className="w-3 h-3" />
-                     <span>NEXT: <span className="font-black text-white">{new Date(scheduledSessions[0].startTime.toDate()).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span></span>
-                     <Badge className="ml-1 bg-white text-[#F06C22] hover:bg-white text-[8px] font-black h-4 px-1 border-none tracking-widest py-0">SCHEDULED</Badge>
-                   </div>
-                 ) : (
-                   <div className="flex items-center gap-1 bg-white/5 px-2 py-1 rounded text-white/40 border border-white/10">
-                     <Clock className="w-3 h-3" />
-                     <span>NEXT: UNSCHEDULED</span>
-                   </div>
-                 )}
+                 {(() => {
+                   if (!scheduledSessions[0]) {
+                     return (
+                       <div className="flex items-center gap-1 bg-white/5 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-white/40 border border-white/10 whitespace-nowrap">
+                         <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                         <span>NEXT: UNSCHEDULED</span>
+                       </div>
+                     );
+                   }
+
+                   const firstSessionDate = scheduledSessions[0].startTime.toDate();
+                   const today = new Date();
+                   const isFirstSessionToday = firstSessionDate.getDate() === today.getDate() && firstSessionDate.getMonth() === today.getMonth() && firstSessionDate.getFullYear() === today.getFullYear();
+                   
+                   if (isFirstSessionToday) {
+                     const timeStr = firstSessionDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                     let nextStr = '';
+                     if (scheduledSessions[1]) {
+                       const nextDate = scheduledSessions[1].startTime.toDate();
+                       nextStr = ` | Next: ${nextDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`;
+                     }
+                     return (
+                       <div className="flex items-center gap-1 bg-[#F06C22]/20 text-[#F06C22] px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-[#F06C22]/30 shadow-[0_0_10px_rgba(240,108,34,0.3)] whitespace-nowrap">
+                         <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                         <span>Today @ {timeStr} <span className="font-black text-white">{nextStr}</span></span>
+                       </div>
+                     );
+                   }
+
+                   return (
+                     <div className="flex items-center gap-1 bg-[#F06C22]/20 text-[#F06C22] px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-[#F06C22]/30 shadow-[0_0_10px_rgba(240,108,34,0.3)] whitespace-nowrap">
+                       <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                       <span>NEXT: <span className="font-black text-white">{firstSessionDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span></span>
+                     </div>
+                   );
+                 })()}
                </div>
              </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 z-10 shrink-0 hidden md:flex">
-          <Button onClick={() => setView('clients')} variant="outline" className="border-white/20 text-white hover:bg-white/10 hover:text-white rounded-lg font-bold uppercase text-[10px] tracking-widest h-8 px-4">
-             Back
-          </Button>
-          <Button onClick={() => setView('workouts')} className="bg-[#F06C22] hover:bg-[#F06C22]/90 text-white rounded-lg font-bold uppercase text-[10px] tracking-widest h-8 px-4 shadow-[0_0_10px_rgba(240,108,34,0.4)] border-none">
-             <Play className="w-3 h-3 mr-1.5 fill-current" /> Initialize
-          </Button>
-          <Button onClick={() => setIsDeleting(true)} variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-white/40 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20 transition-colors">
-            <Trash2 className="w-4 h-4" />
+        <div className="flex items-center gap-2 z-10 shrink-0 ml-auto">
+          <Button onClick={() => setView('workouts')} className="bg-[#F06C22] hover:bg-[#F06C22]/90 text-white rounded-lg font-black uppercase text-xs sm:text-sm tracking-widest h-9 sm:h-10 px-4 sm:px-6 shadow-[0_0_15px_rgba(240,108,34,0.5)] border-none shrink-0">
+             START SESSION
           </Button>
         </div>
 
@@ -622,35 +644,35 @@ export function ClientProfileView({
       </div>
 
       <Tabs defaultValue="overview" className="w-full flex-1 flex flex-col min-h-0" onValueChange={setActiveTab}>
-        <div className="bg-white rounded-[12px] border border-slate-200 mb-2 p-1 overflow-x-auto custom-scrollbar flex-none shadow-sm h-[32px] sm:h-[36px] flex items-center">
-          <TabsList className="bg-transparent p-0 h-full w-full flex gap-0.5">
-            <TabsTrigger value="overview" className="flex-1 rounded-[8px] h-full px-2 font-black uppercase text-[9px] tracking-widest text-[#68717A] data-[state=active]:bg-[#115E8D] data-[state=active]:text-white transition-all data-[state=active]:shadow-sm">
-              Performance Matrix
+        <div className="mb-2">
+          <TabsList className="bg-transparent p-0 flex flex-wrap gap-1 w-full h-auto">
+            <TabsTrigger value="overview" className="flex-1 min-w-[80px] rounded-full border border-slate-200 h-[26px] px-3 font-black uppercase text-[9px] tracking-widest text-[#68717A] bg-transparent data-[state=active]:border-transparent data-[state=active]:bg-[#115E8D] data-[state=active]:text-white transition-all data-[state=active]:shadow-sm">
+              Matrix
             </TabsTrigger>
-            <TabsTrigger value="routines" className="flex-1 rounded-[8px] h-full px-2 font-black uppercase text-[9px] tracking-widest text-[#68717A] data-[state=active]:bg-[#115E8D] data-[state=active]:text-white transition-all data-[state=active]:shadow-sm">
+            <TabsTrigger value="routines" className="flex-1 min-w-[80px] rounded-full border border-slate-200 h-[26px] px-3 font-black uppercase text-[9px] tracking-widest text-[#68717A] bg-transparent data-[state=active]:border-transparent data-[state=active]:bg-[#115E8D] data-[state=active]:text-white transition-all data-[state=active]:shadow-sm">
               Routines
             </TabsTrigger>
-            <TabsTrigger value="focus" className="flex-1 rounded-[8px] h-full px-2 font-black uppercase text-[9px] tracking-widest text-[#68717A] data-[state=active]:bg-[#115E8D] data-[state=active]:text-white transition-all data-[state=active]:shadow-sm">
-              Trainer Focus
+            <TabsTrigger value="focus" className="flex-1 min-w-[80px] rounded-full border border-slate-200 h-[26px] px-3 font-black uppercase text-[9px] tracking-widest text-[#68717A] bg-transparent data-[state=active]:border-transparent data-[state=active]:bg-[#115E8D] data-[state=active]:text-white transition-all data-[state=active]:shadow-sm">
+              Focus
             </TabsTrigger>
-            <TabsTrigger value="history" className="flex-1 rounded-[8px] h-full px-2 font-black uppercase text-[9px] tracking-widest text-[#68717A] data-[state=active]:bg-[#115E8D] data-[state=active]:text-white transition-all data-[state=active]:shadow-sm">
+            <TabsTrigger value="history" className="flex-1 min-w-[80px] rounded-full border border-slate-200 h-[26px] px-3 font-black uppercase text-[9px] tracking-widest text-[#68717A] bg-transparent data-[state=active]:border-transparent data-[state=active]:bg-[#115E8D] data-[state=active]:text-white transition-all data-[state=active]:shadow-sm">
               History
             </TabsTrigger>
-            <TabsTrigger value="reports" className="flex-1 rounded-[8px] h-full px-2 font-black uppercase text-[9px] tracking-widest text-[#68717A] data-[state=active]:bg-[#115E8D] data-[state=active]:text-white transition-all data-[state=active]:shadow-sm">
+            <TabsTrigger value="reports" className="flex-1 min-w-[80px] rounded-full border border-slate-200 h-[26px] px-3 font-black uppercase text-[9px] tracking-widest text-[#68717A] bg-transparent data-[state=active]:border-transparent data-[state=active]:bg-[#115E8D] data-[state=active]:text-white transition-all data-[state=active]:shadow-sm">
               Reports
             </TabsTrigger>
-            <TabsTrigger value="timing" className="flex-1 rounded-[8px] h-full px-2 font-black uppercase text-[9px] tracking-widest text-[#68717A] data-[state=active]:bg-[#115E8D] data-[state=active]:text-white transition-all data-[state=active]:shadow-sm">
+            <TabsTrigger value="timing" className="flex-1 min-w-[80px] rounded-full border border-slate-200 h-[26px] px-3 font-black uppercase text-[9px] tracking-widest text-[#68717A] bg-transparent data-[state=active]:border-transparent data-[state=active]:bg-[#115E8D] data-[state=active]:text-white transition-all data-[state=active]:shadow-sm">
               Timing
             </TabsTrigger>
-            <TabsTrigger value="details" className="flex-1 rounded-[8px] h-full px-2 font-black uppercase text-[9px] tracking-widest text-[#68717A] data-[state=active]:bg-[#115E8D] data-[state=active]:text-white transition-all data-[state=active]:shadow-sm">
+            <TabsTrigger value="details" className="flex-1 min-w-[80px] rounded-full border border-slate-200 h-[26px] px-3 font-black uppercase text-[9px] tracking-widest text-[#68717A] bg-transparent data-[state=active]:border-transparent data-[state=active]:bg-[#115E8D] data-[state=active]:text-white transition-all data-[state=active]:shadow-sm">
               Profile
             </TabsTrigger>
           </TabsList>
         </div>
 
         <TabsContent value="overview" className="mt-0 flex-1 overflow-hidden min-h-0 bg-white rounded-xl shadow-sm border border-slate-200">
-          <div className="w-full h-full overflow-x-auto custom-scrollbar">
-            <table className="w-full text-left border-collapse table-fixed select-none min-w-[700px]">
+          <div className="w-full h-full overflow-hidden">
+            <table className="w-full text-left border-collapse table-fixed select-none min-w-full">
               <thead>
                 <tr className="bg-[#115E8D] text-white uppercase text-[9px] font-black tracking-widest leading-none h-[32px]">
                   <th className="p-1.5 pl-4 w-[28%] border-r border-[#115E8D]/20 truncate">Equipment & Settings</th>
@@ -671,12 +693,16 @@ export function ClientProfileView({
                   const targetLog = displaySessions.length > 0 ? machineLogs.find(l => l.sessionId === displaySessions[displaySessions.length - 1].id) : null;
                   
                   return (
-                    <tr key={machine.id} className="even:bg-slate-50 odd:bg-white hover:bg-[#115E8D]/5 transition-colors h-[32px] sm:h-[34px] group border-b border-slate-100 last:border-b-0">
+                    <tr 
+                      key={machine.id} 
+                      onClick={() => setSelectedInsightMachine(machine)}
+                      className="even:bg-[#F9FAFB] odd:bg-white hover:bg-slate-100 hover:brightness-95 cursor-pointer transition-all h-[32px] group border-b border-slate-100 last:border-b-0"
+                    >
                       <td className="p-1 pl-4 border-r border-slate-200/60 truncate align-middle relative overflow-hidden">
                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#115E8D]/0 group-hover:bg-[#115E8D] transition-colors" />
                         <div className="flex flex-col justify-center translate-y-[1px]">
                           <span className="font-bold text-[11px] text-[#115E8D] leading-none truncate mb-0.5">
-                            {String(idx + 1).padStart(2, '0')} {machine.name}
+                            {machine.name}
                           </span>
                           <span className="text-[7.5px] font-bold text-[#68717A] opacity-70 tracking-widest truncate leading-none uppercase">
                             {clientSettings[machine.id!]?.settings ? Object.entries(clientSettings[machine.id!].settings).map(([k,v]) => `${k}:${v}`).join(' ') : '---'}
@@ -1349,7 +1375,17 @@ export function ClientProfileView({
                          <Label className="text-[10px] font-black uppercase tracking-widest">Enable Routine B</Label>
                          <Switch checked={infoForm.isRoutineBActive} onCheckedChange={v => setInfoForm(f => ({ ...f, isRoutineBActive: v }))} className="data-[state=checked]:bg-amber-500" />
                       </div>
-                      <div className="pt-6">
+                      <div className="pt-6 border-t border-white/10 mt-6 pb-2">
+                         <Button 
+                           variant="outline"
+                           className="w-full h-12 rounded-2xl border-red-500/20 text-red-500 hover:bg-red-500/10 hover:text-red-400 font-black uppercase tracking-widest text-[10px] transition-all bg-transparent"
+                           onClick={() => setIsDeleting(true)}
+                         >
+                           <Trash2 className="w-4 h-4 mr-2" />
+                           Delete Client Account
+                         </Button>
+                      </div>
+                      <div className="pt-2">
                          <Button 
                            disabled={isSavingInfo}
                            onClick={handleSaveInfo}
@@ -1561,6 +1597,143 @@ export function ClientProfileView({
                Done Editing
              </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!selectedInsightMachine} onOpenChange={(open) => !open && setSelectedInsightMachine(null)}>
+        <DialogContent className="max-w-2xl bg-slate-50 p-0 overflow-hidden border-none rounded-3xl" aria-describedby="dialog-description">
+          <DialogTitle className="sr-only">Machine Insights</DialogTitle>
+          <DialogDescription id="dialog-description" className="sr-only">Detailed insights for this machine mapping</DialogDescription>
+          {selectedInsightMachine && (
+            <div className="flex flex-col h-[80vh] sm:h-auto sm:max-h-[85vh]">
+              <div className="bg-[#115E8D] p-6 text-white shrink-0">
+                <div className="flex items-center gap-4 mb-2">
+                  <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                    <Activity className="w-6 h-6 text-white/80" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black uppercase tracking-tighter leading-none">{selectedInsightMachine.name}</h2>
+                    <p className="text-[10px] font-bold text-white/50 tracking-widest uppercase mt-1">Client Machine Insights</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+                 {/* Top Stats */}
+                 <div className="grid grid-cols-2 gap-4">
+                   <Card className="rounded-2xl border-none shadow-sm shadow-slate-200/50 bg-white">
+                      <CardContent className="p-4 flex flex-col justify-center items-center h-full">
+                         <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Avg Time Spent</span>
+                         <div className="flex items-baseline gap-1">
+                           <span className="text-3xl font-black text-[#115E8D]">2.4</span>
+                           <span className="text-xs font-bold text-slate-400 uppercase">Mins</span>
+                         </div>
+                         <div className="flex items-center gap-1 mt-2 text-[9px] font-bold text-emerald-500 uppercase">
+                           <TrendingUp className="w-3 h-3" /> +12% Efficiency
+                         </div>
+                      </CardContent>
+                   </Card>
+                   
+                   <Card className="rounded-2xl border-none shadow-sm shadow-slate-200/50 bg-white">
+                      <CardContent className="p-4 flex flex-col justify-center items-center h-full">
+                         <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Total Volume</span>
+                         <div className="flex items-baseline gap-1">
+                           <span className="text-3xl font-black text-[#115E8D]">1,240</span>
+                           <span className="text-xs font-bold text-slate-400 uppercase">Lbs</span>
+                         </div>
+                         <div className="flex items-center gap-1 mt-2 text-[9px] font-bold text-emerald-500 uppercase">
+                           <TrendingUp className="w-3 h-3" /> Peak Reached
+                         </div>
+                      </CardContent>
+                   </Card>
+                 </div>
+
+                 {/* Demographic Comparison */}
+                 <Card className="rounded-2xl border-none shadow-sm shadow-slate-200/50 bg-white">
+                   <CardContent className="p-4">
+                     <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-4">Demographic Comparison</span>
+                     <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#F06C22]/20 to-[#F06C22]/5 flex items-center justify-center border-2 border-[#F06C22]/20 shrink-0">
+                          <span className="text-primary font-black text-xl">Top</span>
+                        </div>
+                        <div className="flex-1">
+                           <p className="text-sm font-black text-slate-700 uppercase tracking-tight">Top 20% for Age {client ? `${Math.floor(Number(client.age) / 5) * 5}-${Math.floor(Number(client.age) / 5) * 5 + 5}` : 'Group'}</p>
+                           <p className="text-[10px] font-bold text-slate-400 leading-snug mt-1">
+                             This client is outperforming their peer group in force output for this specific articulation over the last 12 sessions.
+                           </p>
+                        </div>
+                     </div>
+                   </CardContent>
+                 </Card>
+
+                 {/* Settings History */}
+                 <Card className="rounded-2xl border-none shadow-sm shadow-slate-200/50 bg-white">
+                   <CardContent className="p-4">
+                     <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-4">Settings History</span>
+                     
+                     <div className="mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                       <span className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-2 block">Current Configuration</span>
+                       <div className="flex flex-wrap gap-2">
+                         {clientSettings[selectedInsightMachine.id!]?.settings ? (
+                           Object.entries(clientSettings[selectedInsightMachine.id!].settings).map(([k,v]) => (
+                             <Badge key={k} variant="secondary" className="bg-[#115E8D]/10 text-[#115E8D] hover:bg-[#115E8D]/10 text-[10px] font-bold tracking-widest uppercase rounded-lg">
+                               {k}: {v}
+                             </Badge>
+                           ))
+                         ) : (
+                           <span className="text-[10px] font-bold text-slate-400 italic">No specific settings saved.</span>
+                         )}
+                       </div>
+                     </div>
+
+                     <div className="space-y-3 relative before:content-[''] before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100">
+                        {/* Mock Timeline item 1 */}
+                        <div className="flex gap-4 relative">
+                          <div className="w-6 h-6 rounded-full bg-white border-4 border-slate-200 z-10 shrink-0" />
+                          <div>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-[#F06C22]">Oct 12, 2023</span>
+                            <p className="text-[11px] font-black text-slate-700 tracking-tight mt-0.5">Seat position adjusted from 4 to 5</p>
+                            <p className="text-[10px] font-bold text-slate-500 mt-1">Client reported discomfort in lower back at origin. Extending seat position alleviated pressure.</p>
+                          </div>
+                        </div>
+                        {/* Mock Timeline item 2 */}
+                        <div className="flex gap-4 relative">
+                          <div className="w-6 h-6 rounded-full bg-white border-4 border-slate-200 z-10 shrink-0" />
+                          <div>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Mar 05, 2023</span>
+                            <p className="text-[11px] font-black text-slate-700 tracking-tight mt-0.5">Initial Calibration</p>
+                            <p className="text-[10px] font-bold text-slate-500 mt-1">Set initial range of motion parameters based on onboarding assessment.</p>
+                          </div>
+                        </div>
+                     </div>
+                   </CardContent>
+                 </Card>
+
+                 {/* Quality Trend */}
+                 <Card className="rounded-2xl border-none shadow-sm shadow-slate-200/50 bg-white">
+                   <CardContent className="p-4">
+                     <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-4">Quality Trend (Last 5 Sessions)</span>
+                     <div className="flex items-center justify-between">
+                       <div className="flex items-end gap-2 flex-1">
+                         <div className="w-[15%] h-8 bg-emerald-500/20 rounded-t-sm" />
+                         <div className="w-[15%] h-12 bg-amber-500/40 rounded-t-sm" />
+                         <div className="w-[15%] h-16 bg-emerald-500/60 rounded-t-sm" />
+                         <div className="w-[15%] h-10 bg-emerald-500/80 rounded-t-sm relative">
+                           <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-emerald-500 border-2 border-white" />
+                         </div>
+                         <div className="w-[15%] h-20 bg-emerald-500 rounded-t-sm relative shadow-[0_0_15px_rgba(16,185,129,0.4)]">
+                           <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-white border-2 border-emerald-500 shadow-sm" />
+                         </div>
+                       </div>
+                       <div className="shrink-0 flex flex-col items-end">
+                         <span className="text-[11px] font-black text-slate-700 uppercase tracking-widest">Trending</span>
+                         <Badge className="bg-emerald-500 hover:bg-emerald-500 text-white border-none mt-1 text-[9px] font-wrap tracking-widest px-2 py-0 h-5">ELITE</Badge>
+                       </div>
+                     </div>
+                   </CardContent>
+                 </Card>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </motion.div>

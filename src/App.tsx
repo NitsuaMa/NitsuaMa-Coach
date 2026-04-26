@@ -161,6 +161,10 @@ export default function App() {
   const sortedTrainers = useMemo(() => {
     return [...trainers].sort((a, b) => (a.order || 0) - (b.order || 0));
   }, [trainers]);
+
+  const currentSession = useMemo(() => {
+    return sessions.find(s => s.status === 'In-Progress' && s.clientId === selectedClientId);
+  }, [sessions, selectedClientId]);
   const [hasQuotaError, setHasQuotaError] = useState(false);
   const [clientFormData, setClientFormData] = useState({ 
     firstName: '', 
@@ -834,7 +838,10 @@ export default function App() {
             </div>
             
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3 px-2 py-1.5 bg-[#115E8D]/5 border border-[#115E8D]/10 rounded-full cursor-pointer hover:bg-[#115E8D]/10 transition-colors">
+              <div 
+                className="flex items-center gap-3 px-2 py-1.5 bg-[#115E8D]/5 border border-[#115E8D]/10 rounded-full cursor-pointer hover:bg-[#115E8D]/10 transition-colors"
+                onClick={() => setCurrentView('trainer-profile')}
+              >
                 <div className="w-8 h-8 rounded-full bg-[#115E8D] text-white flex items-center justify-center shadow-inner">
                   <span className="font-black text-xs uppercase tracking-wider">{authTrainer.initials}</span>
                 </div>
@@ -1038,12 +1045,33 @@ export default function App() {
         </main>
 
         {/* Navigation Bar */}
-        <nav className="fixed bottom-0 left-0 right-0 border-t bg-background/90 backdrop-blur-lg px-6 h-20 flex items-center justify-around z-50">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#68717A]/20 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] px-6 h-20 flex items-center justify-around z-[100]">
           <NavButton 
             active={currentView === 'clients'} 
             onClick={() => setCurrentView('clients')}
             icon={<Users className="w-6 h-6" />}
-            label="Clients"
+            label="Hub"
+          />
+          <NavButton 
+            active={['profile', 'history', 'progress-report'].includes(currentView)} 
+            onClick={() => {
+              if (selectedClientId) {
+                setCurrentView('profile');
+              } else {
+                setCurrentView('clients');
+              }
+            }}
+            icon={<ClipboardList className="w-6 h-6" />}
+            label="Client"
+          />
+          <NavButton 
+            active={currentView === 'workouts'} 
+            onClick={() => setCurrentView('workouts')}
+            icon={<PlayCircle className="w-6 h-6" />}
+            label={currentSession ? "Active Session" : "Start Session"}
+            activeColor={currentSession ? 'text-[#F06C22]' : undefined}
+            activeBg={currentSession ? 'bg-[#F06C22]/10' : undefined}
+            activeIndicator={currentSession ? 'bg-[#F06C22]' : undefined}
           />
           <NavButton 
             active={currentView === 'machines'} 
@@ -1052,25 +1080,12 @@ export default function App() {
             label="Machines"
           />
           <NavButton 
-            active={currentView === 'workouts'} 
-            onClick={() => {
-              setCurrentView('workouts');
-            }}
-            icon={<ClipboardList className="w-6 h-6" />}
-            label="Workout"
-          />
-          <NavButton 
             active={currentView === 'calendar'} 
             onClick={() => setCurrentView('calendar')}
             icon={<Calendar className="w-6 h-6" />}
             label="Calendar"
           />
-          <NavButton 
-            active={currentView === 'trainer-profile'} 
-            onClick={() => setCurrentView('trainer-profile')}
-            icon={<UserCircle className="w-6 h-6" />}
-            label="My Schedule"
-          />
+
           {(authTrainer?.isOwner || user?.email === "jurgensaj@gmail.com") && (
             <NavButton 
               active={currentView === 'dashboard'} 
@@ -1516,20 +1531,36 @@ export default function App() {
   );
 }
 
-function NavButton({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) {
+function NavButton({ 
+  active, 
+  onClick, 
+  icon, 
+  label,
+  activeColor = 'text-[#115E8D]',
+  activeBg = 'bg-[#115E8D]/10',
+  activeIndicator = 'bg-[#115E8D]'
+}: { 
+  active: boolean, 
+  onClick: () => void, 
+  icon: React.ReactNode, 
+  label: string,
+  activeColor?: string,
+  activeBg?: string,
+  activeIndicator?: string
+}) {
   return (
     <button 
       onClick={onClick}
-      className={`flex flex-col items-center gap-0.5 transition-all duration-300 relative ${active ? 'text-primary scale-105' : 'text-muted-foreground hover:text-foreground'}`}
+      className={`flex flex-col items-center gap-0.5 transition-all duration-300 relative ${active ? `${activeColor} scale-105` : 'text-[#68717A] hover:text-[#115E8D]'}`}
     >
-      <div className={`p-1.5 rounded-lg transition-colors ${active ? 'bg-primary/10' : 'bg-transparent'}`}>
+      <div className={`p-1.5 rounded-lg transition-colors ${active ? activeBg : 'bg-transparent'}`}>
         {icon}
       </div>
       <span className="text-[10px] font-black uppercase tracking-tighter">{label}</span>
       {active && (
         <motion.div 
           layoutId="nav-indicator"
-          className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full"
+          className={`absolute -bottom-1 left-0 right-0 h-0.5 rounded-full ${activeIndicator}`}
         />
       )}
     </button>
