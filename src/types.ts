@@ -137,6 +137,22 @@ export interface ExerciseLog {
   updatedAt?: any;
 }
 
+export interface MachineNote {
+  id?: string;
+  content: string;
+  authorId?: string;
+  authorName: string;
+  timestamp: any;
+  isImportant: boolean;
+}
+
+export interface SettingsHistoryEntry {
+  settings: Record<string, string>;
+  updatedBy: string;
+  updatedAt: any;
+  reason?: string;
+}
+
 export interface ClientMachineSetting {
   id?: string;
   clientId: string;
@@ -144,6 +160,9 @@ export interface ClientMachineSetting {
   settings: Record<string, string>;
   updatedBy: string;
   updatedAt: any;
+  notes?: string;
+  machineNotes?: MachineNote[];
+  settingsHistory?: SettingsHistoryEntry[];
 }
 
 export interface ScheduleEntry {

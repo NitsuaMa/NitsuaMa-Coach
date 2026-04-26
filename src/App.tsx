@@ -2657,59 +2657,82 @@ function ClientsView({
         {!searchTerm ? (
           <>
             {/* Daily Hub Schedule Section */}
-            <section className="space-y-6">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <Calendar className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold uppercase tracking-tight text-secondary">Daily Operations Hub</h3>
-                    <p className="text-[10px] font-medium text-secondary/80 uppercase tracking-widest leading-none">Team Schedule & Availability</p>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-4">
-                  {/* Day Selector */}
-                  <div className="flex p-1 bg-muted rounded-2xl border border-border/50">
-                    {weekDays.map((date) => {
-                      const isSelected = date.toDateString() === selectedDate.toDateString();
-                      const isToday = date.toDateString() === new Date().toDateString();
-                      return (
-                        <button
-                          key={date.toISOString()}
-                          onClick={() => setSelectedDate(date)}
-                          className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                            isSelected ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground hover:bg-background/20'
-                          }`}
-                        >
-                          <span className="flex flex-col items-center">
-                            {date.toLocaleDateString([], { weekday: 'short' })}
-                            <span className={`text-[7px] ${isSelected ? 'text-primary/70' : 'opacity-40'}`}>
-                              {isToday ? 'Today' : date.toLocaleDateString([], { day: 'numeric' })}
+            <section className="space-y-4">
+              <div className="flex flex-col gap-5">
+                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    {/* Sleek Horizontal Week Selector */}
+                    <div className="flex flex-wrap gap-2">
+                      {weekDays.map((date) => {
+                        const isSelected = date.toDateString() === selectedDate.toDateString();
+                        const isToday = date.toDateString() === new Date().toDateString();
+                        return (
+                          <button
+                            key={date.toISOString()}
+                            onClick={() => setSelectedDate(date)}
+                            className={`min-w-[70px] px-4 py-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all border-2 ${
+                              isSelected 
+                                ? 'bg-primary border-primary text-primary-foreground shadow-sm scale-105' 
+                                : 'bg-transparent border-muted hover:border-primary/30 text-muted-foreground hover:text-primary'
+                            }`}
+                          >
+                            <span className="flex flex-col items-center">
+                              {date.toLocaleDateString([], { weekday: 'short' })}
+                              <span className={`text-[9px] mt-0.5 ${isSelected ? 'text-primary-foreground/90 font-bold' : 'opacity-60'}`}>
+                                {isToday ? 'Today' : date.toLocaleDateString([], { day: 'numeric' })}
+                              </span>
                             </span>
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* AM/PM Shift Selector */}
-                  <div className="flex p-1 bg-muted rounded-xl border border-border/50">
-                    <button 
-                      onClick={() => setActiveTab('morning')}
-                      className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'morning' ? 'bg-primary shadow-sm text-primary-foreground' : 'text-secondary hover:bg-background/50'}`}
-                    >
-                      AM
-                    </button>
-                    <button 
-                      onClick={() => setActiveTab('afternoon')}
-                      className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'afternoon' ? 'bg-primary shadow-sm text-primary-foreground' : 'text-secondary hover:bg-background/50'}`}
-                    >
-                      PM
-                    </button>
-                  </div>
-                </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    {/* AM/PM Shift Selector */}
+                    <div className="flex p-1 bg-muted rounded-xl border border-border/50 shrink-0">
+                      <button 
+                        onClick={() => setActiveTab('morning')}
+                        className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'morning' ? 'bg-primary shadow-sm text-primary-foreground' : 'text-muted-foreground hover:bg-background/50 text-secondary'}`}
+                      >
+                        AM Shift
+                      </button>
+                      <button 
+                        onClick={() => setActiveTab('afternoon')}
+                        className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'afternoon' ? 'bg-primary shadow-sm text-primary-foreground' : 'text-muted-foreground hover:bg-background/50 text-secondary'}`}
+                      >
+                        PM Shift
+                      </button>
+                    </div>
+                 </div>
+                 
+                 {/* Daily Roster Summary */}
+                 <div className="flex flex-wrap items-center gap-3 pt-2 pb-4 border-b border-border/40">
+                   <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground shrink-0 flex items-center gap-2">
+                     <Calendar className="w-4 h-4" /> Daily Roster:
+                   </span>
+                   {sortedTrainers.map(trainer => {
+                     const sessionCount = todaysSchedules.filter(s => s.trainerName === trainer.fullName).length;
+                     if (sessionCount === 0) return null;
+                     return (
+                       <div key={trainer.id} className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-full pl-1 pr-4 py-1 hover:bg-primary/10 transition-colors">
+                         <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-[9px] font-black text-primary">
+                           {trainer.initials}
+                         </div>
+                         <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">
+                           {trainer.fullName.split(' ')[0]} <span className="text-primary/60 ml-0.5">- {sessionCount} {sessionCount === 1 ? 'Session' : 'Sessions'}</span>
+                         </span>
+                       </div>
+                     );
+                   })}
+                   {todaysSchedules.filter(s => s.trainerName === '' || !s.trainerName || s.trainerName.toLowerCase().includes('select')).length > 0 && (
+                      <div className="flex items-center gap-2 bg-red-500/5 border border-red-500/20 rounded-full px-4 py-1.5 text-red-600">
+                        <span className="text-[10px] font-black uppercase tracking-widest">
+                          Unassigned ({todaysSchedules.filter(s => s.trainerName === '' || !s.trainerName || s.trainerName.toLowerCase().includes('select')).length})
+                        </span>
+                      </div>
+                   )}
+                   {todaysSchedules.length === 0 && (
+                     <span className="text-[10px] font-bold italic text-muted-foreground bg-muted px-4 py-1.5 rounded-full">No sessions scheduled</span>
+                   )}
+                 </div>
               </div>
 
               {/* Team Comparison Grid */}

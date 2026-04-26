@@ -312,6 +312,7 @@ export function TrainerControlHubView({
                 sessionNumber: 0, 
                 date: sessionDate.toISOString().split('T')[0],
                 trainerInitials,
+                status: 'Completed',
                 notes: row['Session Notes'] || '',
                 createdAt: Timestamp.fromDate(sessionDate)
               });

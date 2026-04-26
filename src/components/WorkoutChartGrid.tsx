@@ -11,7 +11,8 @@ import {
   History,
   Activity,
   UserCircle,
-  Clock
+  Clock,
+  AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -242,8 +243,11 @@ export function WorkoutChartGrid({
                          <div className="w-8 h-8 rounded-xl bg-zinc-900 flex items-center justify-center shrink-0 shadow-lg shadow-zinc-200">
                             <Dumbbell className="w-4 h-4 text-white" />
                          </div>
-                         <h4 className="text-base sm:text-lg font-black italic uppercase tracking-tighter text-zinc-900 leading-tight truncate">
+                         <h4 className="text-base sm:text-lg font-black italic uppercase tracking-tighter text-zinc-900 leading-tight truncate flex items-center gap-2">
                             {machine.name}
+                            {clientSettings.find(s => s.machineId === machine.id)?.machineNotes?.some(n => n.isImportant) && (
+                              <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                            )}
                          </h4>
                       </div>
 
