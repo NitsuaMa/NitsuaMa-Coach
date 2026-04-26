@@ -1,0 +1,219 @@
+{
+  "entities": {
+    "Trainer": {
+      "title": "Trainer",
+      "description": "A fitness trainer at Max Strength Fitness.",
+      "type": "object",
+      "properties": {
+        "fullName": { "type": "string", "description": "Full name of the trainer" },
+        "initials": { "type": "string", "description": "Trainer initials for session sign-offs" },
+        "pin": { "type": "string", "description": "Numeric PIN for fast profile switching" },
+        "mindbody_ical_url": { "type": "string", "description": "MindBody schedule subscription URL" },
+        "legacy_filemaker_id": { "type": "string", "description": "ID from original tracking software" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fullName", "initials", "pin"]
+    },
+    "Client": {
+      "title": "Client",
+      "description": "A client being trained at Max Strength Fitness.",
+      "type": "object",
+      "properties": {
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "globalNotes": { "type": "string", "description": "Global notes or cautions (injuries, etc.)" },
+        "remainingSessions": { "type": "number" },
+        "legacy_filemaker_id": { "type": "string", "description": "Historical ID from previous software" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["firstName", "lastName", "isActive", "remainingSessions"]
+    },
+    "Machine": {
+      "title": "Machine",
+      "description": "An exercise machine at Max Strength Fitness.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "fullName": { "type": "string", "description": "Descriptive name (e.g. 4-Way Neck for Cx)" },
+        "settings": { "type": "string", "description": "Default settings for the machine" },
+        "order": { "type": "number" },
+        "guidelines": {
+          "type": "object",
+          "properties": {
+            "femaleNovice": { "type": "string" },
+            "femaleAdvanced": { "type": "string" },
+            "maleNovice": { "type": "string" },
+            "maleAdvanced": { "type": "string" }
+          }
+        },
+        "imageUrl": { "type": "string" }
+      },
+      "required": ["name", "order"]
+    },
+    "Routine": {
+      "title": "Routine",
+      "description": "A predefined sequence of exercises for a client.",
+      "type": "object",
+      "properties": {
+        "clientId": { "type": "string" },
+        "name": { "type": "string" },
+        "machineIds": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["clientId", "name", "machineIds"]
+    },
+    "WorkoutSession": {
+      "title": "WorkoutSession",
+      "description": "A specific workout session for a client.",
+      "type": "object",
+      "properties": {
+        "clientId": { "type": "string" },
+        "isUnassigned": { "type": "boolean" },
+        "routineId": { "type": "string" },
+        "sessionType": { "type": "string", "enum": ["Standard", "Onboarding", "Reset"] },
+        "sessionNumber": { "type": "number" },
+        "date": { "type": "string", "format": "date" },
+        "trainerInitials": { "type": "string" },
+        "status": { "type": "string", "enum": ["In-Progress", "Completed"] },
+        "legacy_filemaker_id": { "type": "string", "description": "Historical session ID" },
+        "legacy_notes": { "type": "string", "description": "Raw string dump of historical workout data" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sessionNumber", "date", "trainerInitials", "status"]
+    },
+    "ExerciseLog": {
+      "title": "ExerciseLog",
+      "description": "A log for a specific exercise during a session.",
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "string" },
+        "clientId": { "type": "string" },
+        "machineId": { "type": "string" },
+        "suggestedOrder": { "type": "number" },
+        "weight": { "type": "string" },
+        "reps": { "type": "string" },
+        "targetWeight": { "type": "string" },
+        "isStaticHold": { "type": "boolean" },
+        "repQuality": { "type": "number", "description": "1-3 rating of rep quality" },
+        "machineSettings": { "type": "object" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sessionId", "machineId"]
+    },
+    "SessionNote": {
+      "title": "SessionNote",
+      "description": "A progress note added to a specific workout session.",
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "string" },
+        "clientId": { "type": "string" },
+        "trainerId": { "type": "string" },
+        "trainerInitials": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sessionId", "content", "trainerInitials"]
+    },
+    "ScheduleEntry": {
+      "title": "ScheduleEntry",
+      "description": "An appointment or session on the calendar.",
+      "type": "object",
+      "properties": {
+        "clientId": { "type": "string" },
+        "clientName": { "type": "string" },
+        "trainerId": { "type": "string" },
+        "trainerName": { "type": "string" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["Scheduled", "Completed", "Cancelled", "No-Show"] },
+        "serviceName": { "type": "string" },
+        "source": { "type": "string", "enum": ["MindBody", "Manual", "Subscription"] },
+        "importId": { "type": "string" },
+        "ical_uid": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["clientName", "trainerName", "startTime", "endTime", "status", "serviceName", "source"]
+    },
+    "ProgressReport": {
+      "title": "ProgressReport",
+      "description": "A performance review and progress report for a client.",
+      "type": "object",
+      "properties": {
+        "clientId": { "type": "string" },
+        "trainerId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "totalSessionsCompleted": { "type": "number" },
+        "attendanceScore": { "type": "number" },
+        "highlightedMovements": { "type": "array" },
+        "habits": { "type": "object" },
+        "theFourPs": { "type": "object" },
+        "thePast": { "type": "object" },
+        "primaryStrategy": { "type": "object" },
+        "theFuture": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["clientId", "trainerId", "date"]
+    },
+    "TrainerFocus": {
+      "title": "TrainerFocus",
+      "description": "An individual focus area set by a trainer for a client.",
+      "type": "object",
+      "properties": {
+        "clientId": { "type": "string" },
+        "trainerId": { "type": "string" },
+        "trainerName": { "type": "string" },
+        "category": { "type": "string", "enum": ["Path", "Pace", "Posture", "Purpose"] },
+        "notes": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["clientId", "trainerId", "category", "notes"]
+    }
+  },
+  "firestore": {
+    "/trainers/{trainerId}": {
+      "schema": "Trainer",
+      "description": "Collection of trainers"
+    },
+    "/clients/{clientId}": {
+      "schema": "Client",
+      "description": "Collection of clients"
+    },
+    "/machines/{machineId}": {
+      "schema": "Machine",
+      "description": "Collection of machines"
+    },
+    "/routines/{routineId}": {
+      "schema": "Routine",
+      "description": "Collection of routines"
+    },
+    "/sessions/{sessionId}": {
+      "schema": "WorkoutSession",
+      "description": "Collection of workout sessions"
+    },
+    "/exerciseLogs/{logId}": {
+      "schema": "ExerciseLog",
+      "description": "Collection of exercise logs"
+    },
+    "/sessionNotes/{noteId}": {
+      "schema": "SessionNote",
+      "description": "Collection of session-specific notes"
+    },
+    "/schedules/{scheduleId}": {
+      "schema": "ScheduleEntry",
+      "description": "Collection of calendar appointments"
+    },
+    "/progressReports/{reportId}": {
+      "schema": "ProgressReport",
+      "description": "Collection of client progress reports"
+    },
+    "/trainerFocuses/{focusId}": {
+      "schema": "TrainerFocus",
+      "description": "Collection of trainer-specific client focuses"
+    }
+  }
+}
